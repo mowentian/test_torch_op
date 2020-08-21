@@ -4,12 +4,13 @@ import numpy as np
 import os
 import poptorch
 
-input_size = 1600
-hidden_size = 1600
-training_batch_size = 8
-time_seq = 500
+input_size = 16
+hidden_size = 16
+training_batch_size = 1
+time_seq = 50
 training_ipu_step_size = 1
 replication_factor = 1
+
 training_combined_batch_size = training_batch_size * training_ipu_step_size * replication_factor
 
 x = torch.randn(time_seq, training_combined_batch_size, input_size)
@@ -27,8 +28,12 @@ class Model(nn.Module):
 
 
 model = Model()
-train_model = poptorch.trainingModel(model, training_ipu_step_size,
-                                     replication_factor=replication_factor,
+
+opts = poptorch.Options()
+opts.deviceIterations(training_ipu_step_size)
+opts.replicationFactor(replication_factor)
+
+train_model = poptorch.trainingModel(model, options=opts,
                                      loss=nn.MSELoss(reduction="mean"))
 
 for i in range(1):

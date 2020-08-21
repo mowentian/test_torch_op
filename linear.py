@@ -29,10 +29,11 @@ import poptorch
 
 in_dim = 2048
 out_dim = 2048
-training_batch_size = 1
+training_batch_size = 2
+gradient_accumulation = 4
+replication_factor = 2
 training_ipu_step_size = 1
-gradient_accumulation = 8
-replication_factor = 16
+
 training_combined_batch_size = training_batch_size * training_ipu_step_size * gradient_accumulation * replication_factor
 
 torch.manual_seed(1024)
@@ -52,13 +53,17 @@ class Model(nn.Module):
 
 model = Model()
 
+opts = poptorch.Options()
+opts.deviceIterations(training_ipu_step_size)
+opts.replicationFactor(replication_factor)
+opts.anchorMode(poptorch.AnchorMode.All)
+opts.Training.gradientAccumulation(gradient_accumulation)
+
 print('torch model(x) --------------------------------------------------------')
 torch_out = model(x)
 print(torch_out)
 print('torch model(x) --------------------------------------------------------')
-train_model = poptorch.trainingModel(model, training_ipu_step_size,
-                                     gradient_accumulation=gradient_accumulation,
-                                     replication_factor=replication_factor,
+train_model = poptorch.trainingModel(model, options=opts,
                                      loss=nn.MSELoss(reduction="mean"))
 
 for i in range(1):
